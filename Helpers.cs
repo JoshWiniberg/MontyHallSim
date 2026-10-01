@@ -2,10 +2,11 @@ namespace MontyHallSim;
 
 public static class Helpers
 {
-    static readonly int k_TextDelay = 10;
+    const int k_TextDelay = 10;
 
 
 
+    // WRITING METHODS
     public static void Write(string text, int newLine = 1)
     {
         char[] chars = text.ToCharArray();
@@ -47,6 +48,9 @@ public static class Helpers
         }
     }
 
+
+
+    // INPUT METHODS
     public static int InputNumberWithinRange(int min, int max, params string[] messages)
     {
         while (true)
@@ -68,8 +72,6 @@ public static class Helpers
         }
     }
 
-
-
     public static bool Confirm(params string[] messages)
     {
         while (true)
@@ -87,32 +89,6 @@ public static class Helpers
             {
                 Write("Invalid input.", 2);
             }
-        }
-    }
-
-
-
-    public static void DrawPrize(int gamesWon)
-    {
-        Console.CursorVisible = false;
-        if (gamesWon == 1)
-        {
-            Console.WriteLine();
-            Console.WriteLine(@"   ______");
-            Console.WriteLine(@"  /|_||_\`.__");
-            Console.WriteLine(@" (   _    _ _\");
-            Console.WriteLine(@" =`-(_)--(_)-'");
-            Console.WriteLine();
-        }
-        else
-        {
-            Console.WriteLine();
-            Console.WriteLine(@"  //\\   //\\");
-            Console.WriteLine(@" ((  \_//  ))");
-            Console.WriteLine(@"  \  o o  /");
-            Console.WriteLine(@"   (  =  )");
-            Console.WriteLine(@"    `---'");
-            Console.WriteLine();
         }
     }
 

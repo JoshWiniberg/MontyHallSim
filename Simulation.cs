@@ -4,13 +4,32 @@
 using static MontyHallSim.Helpers;
 namespace MontyHallSim;
 
-public class Simulation
+public static class Simulation
 {
+    // PRIZES - 0 = Goat, 1 = Car
+    static readonly string[][] prizes = new string[][]
+    {
+        new string[]
+        {
+            @"  //\\   //\\",
+            @" ((  \_//  ))",
+            @"  \  o o  /",
+            @"   (  =  )",
+            @"    `---'"
+        },
+        new string[]
+        {
+            @"   ______",
+            @"  /|_||_\`.__",
+            @" (   _    _ _\",
+            @" =`-(_)--(_)-'",
+        }
+    };
 
 
 
     // MAIN LOOP
-    public void RunGame()
+    public static void RunGame()
     {
         (int gamesPlayed, int gamesWon, int switchCount) totals = (0, 0, 0);
 
@@ -44,14 +63,13 @@ public class Simulation
 
 
     // GET USER CONFIG AND FIRE THE SIMULATION STEPS
-    (int gamesPlayed, int gamesWon, int switchCount) Play()
+    static (int gamesPlayed, int gamesWon, int switchCount) Play()
     {
-        int simCount = 0;
-        bool switchDoors = false;
         (int gamesWon, int switchCount) roundTotals = (0, 0);
 
         Console.Clear();
-        simCount = InputNumberWithinRange(
+
+        int simCount = InputNumberWithinRange(
             1, 100_000_000,
             "How many simulations to run?",
             "Enter 1 for a single game with step-by-step execution.",
@@ -59,7 +77,7 @@ public class Simulation
 
         if (simCount > 1) // Batch test mode
         {
-            switchDoors = Confirm("Switch doors? (Y/N): ");
+            bool switchDoors = Confirm("Switch doors? (Y/N): ");
 
             Console.Clear();
             Console.WriteLine($"Simulating {simCount} games with strategy: {(switchDoors ? "Switch" : "Don't Switch")}");
@@ -73,7 +91,7 @@ public class Simulation
         }
         else // Single game mode
         {
-            (bool won, bool switched) result = SingleGame(switchDoors);
+            (bool won, bool switched) result = SingleGame();
             roundTotals.gamesWon += result.won ? 1 : 0;
             roundTotals.switchCount += result.switched ? 1 : 0;
         }
@@ -83,13 +101,15 @@ public class Simulation
     }
 
 
-    // SINGLE PLAYER MODE
-    (bool won, bool switched) SingleGame(bool switchDoors)
+    // SINGLE GAME MODE
+    static (bool won, bool switched) SingleGame()
     {
         int winningDoor = Random.Shared.Next(0, 3);
 
         Console.Clear();
+
         int playerDoor = InputNumberWithinRange(1, 3, "Choose a door (1, 2, or 3): ") - 1;
+
         Console.Clear();
         Write($"You chose door {playerDoor + 1}.");
         Wait(2000);
@@ -101,7 +121,7 @@ public class Simulation
         Console.WriteLine();
         Wait(2000);
 
-        switchDoors = Confirm("Would you like to switch doors? (Y/N): ");
+        bool switchDoors = Confirm("Would you like to switch doors? (Y/N): ");
         if (switchDoors)
         {
             playerDoor = 3 - revealedDoor - playerDoor;
@@ -131,7 +151,7 @@ public class Simulation
 
 
     // BATCH MODE
-    (bool won, bool switched) BatchMode(bool switchDoors)
+    static (bool won, bool switched) BatchMode(bool switchDoors)
     {
         int winningDoor = Random.Shared.Next(0, 3);
         int playerDoor = Random.Shared.Next(0, 3);
@@ -147,7 +167,7 @@ public class Simulation
 
 
     // REVEAL A DOOR THAT IS NOT THE PLAYER'S CHOICE OR THE WINNING DOOR
-    int RevealDoor(int playerDoor, int winningDoor)
+    static int RevealDoor(int playerDoor, int winningDoor)
     {
         (int doorA, int doorB) losingDoors;
 
@@ -169,14 +189,22 @@ public class Simulation
 
 
     // DISPLAY THE RESULTS OF THE SIMULATION ROUND
-    void ShowResult(int simCount, int gamesWon)
+    static void ShowResult(int simCount, int gamesWon)
     {
         Console.Clear();
+
         if (simCount == 1)
         {
             Write($"You {(gamesWon == 1 ? "won a car!" : "lost. Enjoy your goat.")}");
             Wait(2000);
-            DrawPrize(gamesWon);
+
+            Console.CursorVisible = false;
+            Console.WriteLine();
+            
+            foreach (var line in prizes[gamesWon])
+                Console.WriteLine(line);
+            
+            Console.WriteLine();
             Wait(2000);
         }
         else
@@ -188,5 +216,5 @@ public class Simulation
 
 
 
-    void Wait(int ms) => Thread.Sleep(ms);
+    static void Wait(int ms) => Thread.Sleep(ms);
 }
