@@ -43,7 +43,7 @@ public class Simulation
 
 
 
-    // GET USER CONFIG AND FIRE THE SIMULATION ROUND
+    // GET USER CONFIG AND FIRE THE SIMULATION STEPS
     (int gamesPlayed, int gamesWon, int switchCount) Play()
     {
         int simCount = 0;
@@ -57,46 +57,99 @@ public class Simulation
             "Enter 1 for a single game with step-by-step execution.",
             "Or enter a number between 2 and 100,000,000 to run a batch test: ");
 
-        bool singleGame = simCount == 1;
-
-        if (!singleGame)
+        if (simCount > 1) // Batch test mode
+        {
             switchDoors = Confirm("Switch doors? (Y/N): ");
 
-        Console.Clear();
-        Console.WriteLine($"Simulating {simCount} games with strategy: {(switchDoors ? "Switch" : "Don't Switch")}");
+            Console.Clear();
+            Console.WriteLine($"Simulating {simCount} games with strategy: {(switchDoors ? "Switch" : "Don't Switch")}");
 
-        for (int i = 0; i < simCount; i++)
+            for (int i = 0; i < simCount; i++)
+            {
+                (bool won, bool switched) result = (BatchMode(switchDoors));
+                roundTotals.gamesWon += result.won ? 1 : 0;
+                roundTotals.switchCount += result.switched ? 1 : 0;
+            }
+        }
+        else // Single game mode
         {
-            (bool won, bool switched) result = (WonGame(switchDoors, singleGame));
+            (bool won, bool switched) result = SingleGame(switchDoors);
             roundTotals.gamesWon += result.won ? 1 : 0;
             roundTotals.switchCount += result.switched ? 1 : 0;
         }
 
-        ShowResult(simCount, singleGame, roundTotals.gamesWon);
+        ShowResult(simCount, roundTotals.gamesWon);
         return (simCount, roundTotals.gamesWon, roundTotals.switchCount);
     }
 
 
-
-    // RUN A SINGLE GAME AND RETURN THE RESULT
-    (bool won, bool switched) WonGame(bool switchDoors, bool singleGame) // messy, need to split this up into smaller methods
+    // SINGLE PLAYER MODE
+    (bool won, bool switched) SingleGame(bool switchDoors)
     {
         int winningDoor = Random.Shared.Next(0, 3);
-        int playerDoor = 0;
-        (int doorA, int doorB) losingDoors;
-        int revealedDoor = 0;
 
-        if (singleGame)
+        Console.Clear();
+        int playerDoor = InputNumberWithinRange(1, 3, "Choose a door (1, 2, or 3): ") - 1;
+        Console.Clear();
+        Write($"You chose door {playerDoor + 1}.");
+        Wait(2000);
+        Console.WriteLine();
+
+        int revealedDoor = RevealDoor(playerDoor, winningDoor);
+
+        Write($"Host opens door {revealedDoor + 1}. There's a goat behind it!");
+        Console.WriteLine();
+        Wait(2000);
+
+        switchDoors = Confirm("Would you like to switch doors? (Y/N): ");
+        if (switchDoors)
         {
-            Console.Clear();
-            playerDoor = InputNumberWithinRange(1, 3, "Choose a door (1, 2, or 3): ") - 1;
-            Console.Clear();
-            Write($"You chose door {playerDoor + 1}.");
-            Wait(2000);
+            playerDoor = 3 - revealedDoor - playerDoor;
             Console.WriteLine();
+            Write($"You switched to door {playerDoor + 1}.");
         }
         else
-            playerDoor = Random.Shared.Next(0, 3);
+        {
+            Console.WriteLine();
+            Write($"You stuck with door {playerDoor + 1}.");
+        }
+
+        Wait(2000);
+        Console.WriteLine();
+        Write($"The host is opening door {playerDoor + 1}", 0);
+
+        for (int i = 0; i < 3; i++)
+        {
+            Console.Write(".");
+            Wait(1000);
+        }
+        Wait(1000);
+
+        return ((playerDoor == winningDoor), switchDoors);
+    }
+
+
+
+    // BATCH MODE
+    (bool won, bool switched) BatchMode(bool switchDoors)
+    {
+        int winningDoor = Random.Shared.Next(0, 3);
+        int playerDoor = Random.Shared.Next(0, 3);
+
+        int revealedDoor = RevealDoor(playerDoor, winningDoor);
+
+        if (switchDoors)
+            playerDoor = 3 - revealedDoor - playerDoor;
+
+        return ((playerDoor == winningDoor), switchDoors);
+    }
+
+
+
+    // REVEAL A DOOR THAT IS NOT THE PLAYER'S CHOICE OR THE WINNING DOOR
+    int RevealDoor(int playerDoor, int winningDoor)
+    {
+        (int doorA, int doorB) losingDoors;
 
         if (playerDoor == winningDoor)
         {
@@ -107,57 +160,19 @@ public class Simulation
                 _ => (0, 1)
             };
             int r = Random.Shared.Next(0, 2);
-            revealedDoor = r == 0 ? losingDoors.doorA : losingDoors.doorB;
+            return r == 0 ? losingDoors.doorA : losingDoors.doorB;
         }
         else
-            revealedDoor = 3 - winningDoor - playerDoor;
-
-        if (singleGame)
-        {
-            Write($"Host opens door {revealedDoor + 1}. There's a goat behind it!");
-            Console.WriteLine();
-            Wait(2000);
-        }
-
-        if (singleGame)
-        {
-            switchDoors = Confirm("Would you like to switch doors? (Y/N): ");
-            if (switchDoors)
-            {
-                playerDoor = 3 - revealedDoor - playerDoor;
-                Console.WriteLine();
-                Write($"You switched to door {playerDoor + 1}.");
-            }
-            else
-            {
-                Console.WriteLine();
-                Write($"You stuck with door {playerDoor + 1}.");
-            }
-
-            Wait(2000);
-            Console.WriteLine();
-            Write($"The host is opening door {playerDoor + 1}", 0);
-
-            for (int i = 0; i < 3; i++)
-            {
-                Console.Write(".");
-                Wait(1000);
-            }
-            Wait(1000);
-        }
-        else if (switchDoors)
-            playerDoor = 3 - revealedDoor - playerDoor;
-
-        return ((playerDoor == winningDoor), switchDoors);
+            return 3 - winningDoor - playerDoor;
     }
 
 
 
     // DISPLAY THE RESULTS OF THE SIMULATION ROUND
-    void ShowResult(int simCount, bool singleGame, int gamesWon)
+    void ShowResult(int simCount, int gamesWon)
     {
         Console.Clear();
-        if (singleGame)
+        if (simCount == 1)
         {
             Write($"You {(gamesWon == 1 ? "won a car!" : "lost. Enjoy your goat.")}");
             Wait(2000);
