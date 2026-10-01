@@ -6,9 +6,9 @@ namespace MontyHallSim;
 
 public class Simulation
 {
-    
-    
-    
+
+
+
     public void RunGame()
     {
         (int gamesPlayed, int gamesWon, int switchCount) totals = (0, 0, 0);
@@ -63,7 +63,7 @@ public class Simulation
             switchDoors = Confirm("Switch doors? (Y/N): ");
 
         Console.Clear();
-        Console.WriteLine($"Simulating {simCount} games with strategy: {(switchDoors ? "Switch" : "Stay")}");
+        Console.WriteLine($"Simulating {simCount} games with strategy: {(switchDoors ? "Switch" : "Don't Switch")}");
 
         for (int i = 0; i < simCount; i++)
         {
