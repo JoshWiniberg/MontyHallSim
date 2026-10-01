@@ -4,38 +4,42 @@ public static class MontyHallSim
 {
     public static void GameLoop()
     {
-        (int gamesPlayed, int gamesWon) totals = (0, 0);
+        (int gamesPlayed, int gamesWon, int switchCount) totals = (0, 0, 0);
 
         bool playAgain = true;
         while (playAgain)
         {
-            (int gamesPlayed, int gamesWon) result = Play();
+            (int gamesPlayed, int gamesWon, int switchCount) result = Play();
             totals.gamesPlayed += result.gamesPlayed;
             totals.gamesWon += result.gamesWon;
+            totals.switchCount += result.switchCount;
 
+            double switchRatio = (double)totals.switchCount / totals.gamesPlayed;
             double winRatio = (double)totals.gamesWon / totals.gamesPlayed;
-
-            Console.WriteLine($"TOTAL GAMES PLAYED: {totals.gamesPlayed}");
-            Console.WriteLine($"TOTAL WIN RATIO: {winRatio:P2}\n");
             
+            Console.WriteLine($"TOTAL GAMES PLAYED: {totals.gamesPlayed}");
+            Console.WriteLine($"TOTAL SWITCH RATIO: {switchRatio:P2}");
+            Console.WriteLine($"TOTAL WIN RATIO: {winRatio:P2}\n");
+
             playAgain = Confirm("Play again? (Y/N): ");
 
             if (playAgain && Confirm("Reset totals? (Y/N): "))
             {
                 totals.gamesPlayed = 0;
                 totals.gamesWon = 0;
+                totals.switchCount = 0;
             }
             
             Console.WriteLine();
         }
     }
 
-    static (int gamesPlayed, int gamesWon) Play()
+    static (int gamesPlayed, int gamesWon, int switchCount) Play()
     {
         int simCount = 0;
         bool singleGame = false;
         bool switchDoors = false;
-        int gamesWon = 0;
+        (int gamesWon, int switchCount) roundTotals = (0, 0);
 
         Console.Clear();
         simCount = InputNumberWithinRange("How many simulations to run?" 
@@ -45,18 +49,19 @@ public static class MontyHallSim
         
         if(!singleGame)
             switchDoors = Confirm("Switch doors? (Y/N): ");
-        
+
         for (int i = 0; i < simCount; i++)
         {
-            if (WonGame(switchDoors, singleGame))
-                gamesWon++;
+            (bool won, bool switched) result = (WonGame(switchDoors, singleGame));
+            roundTotals.gamesWon += result.won ? 1 : 0;
+            roundTotals.switchCount += result.switched ? 1 : 0;
         }
         
-        ShowResult(simCount, singleGame, gamesWon);
-        return (simCount, gamesWon);
+        ShowResult(simCount, singleGame, roundTotals.gamesWon);
+        return (simCount, roundTotals.gamesWon, roundTotals.switchCount);
     }
 
-    static bool WonGame(bool switchDoors, bool singleGame)
+    static (bool won, bool switched) WonGame(bool switchDoors, bool singleGame)
     {
         /*
         Of course, the most efficient way is:
@@ -124,16 +129,15 @@ public static class MontyHallSim
 
             for (int i = 0; i < 3; i++)
             {
-                Wait(750);
                 Console.Write(".");
-                Wait(750);
+                Wait(1000);
             }
             Wait(1000);
         }
         else if (switchDoors)
             playerDoor = 3 - revealedDoor - playerDoor;
 
-        return playerDoor == winningDoor;
+        return ((playerDoor == winningDoor), switchDoors);
     }
 
     static void ShowResult(int simCount, bool singleGame, int gamesWon)
@@ -147,7 +151,7 @@ public static class MontyHallSim
         else
         {
             double winRatio = (double)gamesWon / simCount;
-            Console.WriteLine($"YOU WON {winRatio:P2} OF GAMES.\n");
+            Console.WriteLine($"YOU WON {winRatio:P2} OF GAMES THAT ROUND.\n");
         }
     }
 
