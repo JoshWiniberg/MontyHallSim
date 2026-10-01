@@ -2,9 +2,13 @@
 
 public static class MontyHallSim
 {
+    const int k_TextDelay = 10;
+    
     public static void GameLoop()
     {
         (int gamesPlayed, int gamesWon, int switchCount) totals = (0, 0, 0);
+
+        Console.CursorVisible = false;
 
         bool playAgain = true;
         while (playAgain)
@@ -17,9 +21,9 @@ public static class MontyHallSim
             double switchRatio = (double)totals.switchCount / totals.gamesPlayed;
             double winRatio = (double)totals.gamesWon / totals.gamesPlayed;
             
-            Console.WriteLine($"TOTAL GAMES PLAYED: {totals.gamesPlayed}");
-            Console.WriteLine($"TOTAL SWITCH RATIO: {switchRatio:P2}");
-            Console.WriteLine($"TOTAL WIN RATIO: {winRatio:P2}\n");
+            Write($"TOTAL GAMES PLAYED: {totals.gamesPlayed}");
+            Write($"TOTAL SWITCH RATIO: {switchRatio:P2}");
+            Write($"TOTAL WIN RATIO: {winRatio:P2}", 2);
 
             playAgain = Confirm("Play again? (Y/N): ");
 
@@ -29,8 +33,6 @@ public static class MontyHallSim
                 totals.gamesWon = 0;
                 totals.switchCount = 0;
             }
-            
-            Console.WriteLine();
         }
     }
 
@@ -42,13 +44,19 @@ public static class MontyHallSim
         (int gamesWon, int switchCount) roundTotals = (0, 0);
 
         Console.Clear();
-        simCount = InputNumberWithinRange("How many simulations to run?" 
-            + "\nEnter 1 for a single game with step-by-step execution."
-            + "\nOr enter a number between 2 and 100,000,000 to run a batch test: ", 1, 100_000_000);
+        simCount = InputNumberWithinRange(
+            1, 100_000_000,
+            "How many simulations to run?", 
+            "Enter 1 for a single game with step-by-step execution.",
+            "Or enter a number between 2 and 100,000,000 to run a batch test: ");
+        
         singleGame = simCount == 1;
         
-        if(!singleGame)
+        if (!singleGame)
             switchDoors = Confirm("Switch doors? (Y/N): ");
+
+        Console.Clear();
+        Console.WriteLine($"Simulating {simCount} games with strategy: {(switchDoors ? "Switch" : "Stay")}");
 
         for (int i = 0; i < simCount; i++)
         {
@@ -64,13 +72,14 @@ public static class MontyHallSim
     static (bool won, bool switched) WonGame(bool switchDoors, bool singleGame)
     {
         /*
-        Of course, the most efficient way is:
+        Of course, the most efficient way to work out the result is:
 
         {
             int playerDoor = Random.Shared.Next(0, 3);
             if (switchDoors)
-                return (playerDoor is 0 or 1);
-            else return (playerDoor is 0);
+                won = (playerDoor is 0 or 1);
+            else
+                won = (playerDoor is 0);
         }
 
         But that assumes we already trust the maths.
@@ -85,10 +94,11 @@ public static class MontyHallSim
         if (singleGame)
         {
             Console.Clear();
-            playerDoor = InputNumberWithinRange("Choose a door (1, 2, or 3): ", 1, 3) - 1;
+            playerDoor = InputNumberWithinRange(1, 3, "Choose a door (1, 2, or 3): ") - 1;
             Console.Clear();
-            Console.WriteLine($"You chose door {playerDoor + 1}.");
+            Write($"You chose door {playerDoor + 1}.");
             Wait(2000);
+            Console.WriteLine();
         }
         else
             playerDoor = Random.Shared.Next(0, 3);
@@ -109,7 +119,8 @@ public static class MontyHallSim
 
         if (singleGame)
         {
-            Console.WriteLine($"Host opens door {revealedDoor + 1}. There's a goat behind it!");
+            Write($"Host opens door {revealedDoor + 1}. There's a goat behind it!");
+            Console.WriteLine();
             Wait(2000);
         }
 
@@ -119,13 +130,18 @@ public static class MontyHallSim
             if (switchDoors)
             {
                 playerDoor = 3 - revealedDoor - playerDoor;
-                Console.WriteLine($"\nYou switched to door {playerDoor + 1}.");
+                Console.WriteLine();
+                Write($"You switched to door {playerDoor + 1}.");
             }
             else
-                Console.WriteLine($"\nYou stuck with door {playerDoor + 1}.");
+            {
+                Console.WriteLine();
+                Write($"You stuck with door {playerDoor + 1}.");
+            }
 
             Wait(2000);
-            Console.Write($"The host is opening door {playerDoor + 1}");
+            Console.WriteLine();
+            Write($"The host is opening door {playerDoor + 1}", 0);
 
             for (int i = 0; i < 3; i++)
             {
@@ -145,39 +161,79 @@ public static class MontyHallSim
         Console.Clear();
         if (singleGame)
         {
-            Console.WriteLine($"You {(gamesWon == 1 ? "won a car!" : "lost. Enjoy your goat.")}");
+            Write($"You {(gamesWon == 1 ? "won a car!" : "lost. Enjoy your goat.")}");
+            Wait(2000);
             DrawPrize(gamesWon);
+            Wait(2000);
         }
         else
         {
             double winRatio = (double)gamesWon / simCount;
-            Console.WriteLine($"YOU WON {winRatio:P2} OF GAMES THAT ROUND.\n");
+            Write($"YOU WON {winRatio:P2} OF GAMES THAT ROUND.\n");
         }
     }
 
-    static int InputNumberWithinRange(string message, int min, int max)
+    static int InputNumberWithinRange(int min, int max, string? message1 = null, string? message2 = null, string? message3 = null)
     {
         while (true)
         {
-            Console.Write(message);
+            if (message1 != null)
+                Write(message1, 0);
+            if (message2 != null)
+            {
+                Console.WriteLine();
+                Write(message2, 0);
+            }
+            if (message3 != null)
+            {
+                Console.WriteLine();
+                Write(message3, 0);
+            }
+
+            Console.CursorVisible = true;
             if (int.TryParse(Console.ReadLine(), out int input)
             && input >= min && input <= max)
+            {
+                Console.CursorVisible = false;
                 return input;
+            }
             else
-                Console.WriteLine("Invalid input.\n");
+            {
+                Write("Invalid input.");
+                Console.WriteLine();
+            }
         }
     }
 
-    static bool Confirm(string message)
+    static bool Confirm(string? message1 = null, string? message2 = null, string? message3 = null)
     {
+        Console.CursorVisible = true;
         while (true)
         {
-            Console.Write(message);
+            if (message1 != null)
+                Write(message1, 0);
+            if (message2 != null)
+            {
+                Console.WriteLine();
+                Write(message2, 0);
+            }
+            if (message3 != null)
+            {
+                Console.WriteLine();
+                Write(message3, 0);
+            }
+
+            Console.CursorVisible = true;
             string? input = Console.ReadLine()?.Trim().ToLower();
             if (input is "y" or "n")
+            {
+                Console.CursorVisible = false;
                 return input == "y";
+            }
             else
-                Console.WriteLine("Invalid input.\n");
+            {
+                Write("Invalid input.");
+            }
         }
     }
 
@@ -204,5 +260,21 @@ public static class MontyHallSim
         }
     }
 
+    static void Write(string text, int newLine = 1)
+    {
+        char[] chars = text.ToCharArray();
+        
+        Console.CursorVisible = false;
+
+        foreach (var c in chars)
+        {
+            Console.Write(c);
+            Wait(k_TextDelay);
+        }
+        
+        for (int i = 0; i < newLine; i++)
+            Console.WriteLine();
+    }
+    
     static void Wait(int ms) => Thread.Sleep(ms);
 }
