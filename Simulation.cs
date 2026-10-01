@@ -9,6 +9,7 @@ public class Simulation
 
 
 
+    // MAIN LOOP
     public void RunGame()
     {
         (int gamesPlayed, int gamesWon, int switchCount) totals = (0, 0, 0);
@@ -18,7 +19,10 @@ public class Simulation
         bool playAgain = true;
         while (playAgain)
         {
+            // Play round, get results
             (int gamesPlayed, int gamesWon, int switchCount) result = Play();
+
+            // End round
             totals.gamesPlayed += result.gamesPlayed;
             totals.gamesWon += result.gamesWon;
             totals.switchCount += result.switchCount;
@@ -33,20 +37,16 @@ public class Simulation
             playAgain = Confirm("Play again? (Y/N): ");
 
             if (playAgain && Confirm("Reset totals? (Y/N): "))
-            {
-                totals.gamesPlayed = 0;
-                totals.gamesWon = 0;
-                totals.switchCount = 0;
-            }
+                totals = (0, 0, 0);
         }
     }
 
 
 
+    // GET USER CONFIG AND FIRE THE SIMULATION ROUND
     (int gamesPlayed, int gamesWon, int switchCount) Play()
     {
         int simCount = 0;
-        bool singleGame = false;
         bool switchDoors = false;
         (int gamesWon, int switchCount) roundTotals = (0, 0);
 
@@ -57,7 +57,7 @@ public class Simulation
             "Enter 1 for a single game with step-by-step execution.",
             "Or enter a number between 2 and 100,000,000 to run a batch test: ");
 
-        singleGame = simCount == 1;
+        bool singleGame = simCount == 1;
 
         if (!singleGame)
             switchDoors = Confirm("Switch doors? (Y/N): ");
@@ -78,23 +78,9 @@ public class Simulation
 
 
 
-    (bool won, bool switched) WonGame(bool switchDoors, bool singleGame)
+    // RUN A SINGLE GAME AND RETURN THE RESULT
+    (bool won, bool switched) WonGame(bool switchDoors, bool singleGame) // messy, need to split this up into smaller methods
     {
-        /*
-        Of course, the most efficient way to work out the result is:
-
-        {
-            int playerDoor = Random.Shared.Next(0, 3);
-            if (switchDoors)
-                won = (playerDoor is 0 or 1);
-            else
-                won = (playerDoor is 0);
-        }
-
-        But that assumes we already trust the maths.
-        So instead we run each individual step as a proof. :)
-        */
-
         int winningDoor = Random.Shared.Next(0, 3);
         int playerDoor = 0;
         (int doorA, int doorB) losingDoors;
@@ -167,6 +153,7 @@ public class Simulation
 
 
 
+    // DISPLAY THE RESULTS OF THE SIMULATION ROUND
     void ShowResult(int simCount, bool singleGame, int gamesWon)
     {
         Console.Clear();
