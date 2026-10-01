@@ -32,9 +32,9 @@ public static class MontyHallSim
 
     static (int gamesPlayed, int gamesWon) Play()
     {
-        int simCount;
+        int simCount = 0;
         bool singleGame = false;
-        bool switchDoors;
+        bool switchDoors = false;
         int gamesWon = 0;
 
         Console.Clear();
@@ -42,7 +42,9 @@ public static class MontyHallSim
             + "\nEnter 1 for a single game with step-by-step execution."
             + "\nOr enter a number between 2 and 100,000,000 to run a batch test: ", 1, 100_000_000);
         singleGame = simCount == 1;
-        switchDoors = Confirm("Switch doors? (Y/N): ");
+        
+        if(!singleGame)
+            switchDoors = Confirm("Switch doors? (Y/N): ");
         
         for (int i = 0; i < simCount; i++)
         {
@@ -71,15 +73,20 @@ public static class MontyHallSim
         */
 
         int winningDoor = Random.Shared.Next(0, 3);
-        int playerDoor = Random.Shared.Next(0, 3);
+        int playerDoor = 0;
         (int doorA, int doorB) losingDoors;
         int revealedDoor = 0;
 
         if (singleGame)
         {
-            Console.WriteLine($"\nPlayer's initial choice: {playerDoor}");
-            Console.WriteLine($"\nWinning door: {winningDoor}");
+            Console.Clear();
+            playerDoor = InputNumberWithinRange("Choose a door (1, 2, or 3): ", 1, 3) - 1;
+            Console.Clear();
+            Console.WriteLine($"You chose door {playerDoor + 1}.");
+            Wait(2000);
         }
+        else
+            playerDoor = Random.Shared.Next(0, 3);
 
         if (playerDoor == winningDoor)
         {
@@ -96,26 +103,51 @@ public static class MontyHallSim
             revealedDoor = 3 - winningDoor - playerDoor;
 
         if (singleGame)
-            Console.WriteLine($"Host reveals door: {revealedDoor}");
-
-        if (switchDoors)
         {
-            playerDoor = 3 - revealedDoor - playerDoor;
-            if (singleGame)
-                Console.WriteLine($"Player switched to: {playerDoor}");
+            Console.WriteLine($"Host opens door {revealedDoor + 1}. There's a goat behind it!");
+            Wait(2000);
         }
+
+        if (singleGame)
+        {
+            switchDoors = Confirm("Would you like to switch doors? (Y/N): ");
+            if (switchDoors)
+            {
+                playerDoor = 3 - revealedDoor - playerDoor;
+                Console.WriteLine($"\nYou switched to door {playerDoor + 1}.");
+            }
+            else
+                Console.WriteLine($"\nYou stuck with door {playerDoor + 1}.");
+
+            Wait(2000);
+            Console.Write($"The host is opening door {playerDoor + 1}");
+
+            for (int i = 0; i < 3; i++)
+            {
+                Wait(750);
+                Console.Write(".");
+                Wait(750);
+            }
+            Wait(1000);
+        }
+        else if (switchDoors)
+            playerDoor = 3 - revealedDoor - playerDoor;
 
         return playerDoor == winningDoor;
     }
 
     static void ShowResult(int simCount, bool singleGame, int gamesWon)
     {
+        Console.Clear();
         if (singleGame)
-            Console.WriteLine($"\nYou {(gamesWon == 1 ? "won" : "lost")} the game.\n");
+        {
+            Console.WriteLine($"You {(gamesWon == 1 ? "won a car!" : "lost. Enjoy your goat.")}");
+            DrawPrize(gamesWon);
+        }
         else
         {
             double winRatio = (double)gamesWon / simCount;
-            Console.WriteLine($"\nYOU WON {winRatio:P2} OF GAMES.\n");
+            Console.WriteLine($"YOU WON {winRatio:P2} OF GAMES.\n");
         }
     }
 
@@ -144,4 +176,29 @@ public static class MontyHallSim
                 Console.WriteLine("Invalid input.\n");
         }
     }
+
+    static void DrawPrize(int gamesWon)
+    {
+        if (gamesWon == 1)
+        {
+            Console.WriteLine();
+            Console.WriteLine(@"   ______");
+            Console.WriteLine(@"  /|_||_\`.__");
+            Console.WriteLine(@" (   _    _ _\");
+            Console.WriteLine(@" =`-(_)--(_)-'");
+            Console.WriteLine();
+        }
+        else
+        {
+            Console.WriteLine();
+            Console.WriteLine(@"  //\\   //\\");
+            Console.WriteLine(@" ((  \_//  ))");
+            Console.WriteLine(@"  \  o o  /");
+            Console.WriteLine(@"   (  =  )");
+            Console.WriteLine(@"    `---'");
+            Console.WriteLine();
+        }
+    }
+
+    static void Wait(int ms) => Thread.Sleep(ms);
 }
